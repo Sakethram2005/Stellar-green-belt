@@ -32,7 +32,8 @@ A client locks XLM in a Soroban smart contract. The freelancer completes work. T
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/00203c7d-6d44-421b-9f87-e9164e639693" />
 
 ### CI/CD Pipeline
-> Add GitHub Actions screenshot
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/05fc1425-1e1e-41e0-b3f7-1ab207a8160c" />
+"Deploy to Vercel" failed because the Vercel secrets (VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID) aren't set in GitHub.
 
 ## ⚙️ Setup
 
