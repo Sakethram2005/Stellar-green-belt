@@ -31,10 +31,6 @@ A client locks XLM in a Soroban smart contract. The freelancer completes work. T
 ### Mobile Responsive
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/00203c7d-6d44-421b-9f87-e9164e639693" />
 
-
-### Analytics Dashboard
-> Add Vercel Analytics screenshot
-
 ### CI/CD Pipeline
 > Add GitHub Actions screenshot
 
