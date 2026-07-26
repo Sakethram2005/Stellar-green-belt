@@ -5,7 +5,7 @@
 **Level 4 — Green Belt · Soroban Scout Program**
 
 ## 🌐 Live Demo
-> [Add your Vercel URL here]
+[> [Vercel URL]](https://stellar-escrow-ofnfjwr1c-thammandra-saketh-ram.vercel.app/)
 
 ## 📋 What It Does
 
@@ -17,7 +17,7 @@ A client locks XLM in a Soroban smart contract. The freelancer completes work. T
 
 | Field | Value |
 |---|---|
-| Contract ID | `YOUR_CONTRACT_ID_HERE` |
+| Contract ID | `CC6ZQOQAVFLHKSUZ73JDCHMJLH4RN5F6XXZOQUUP2VQEQ27EFCQGKT2G` |
 | Network | Stellar Testnet |
 | Token | XLM (native SAC) |
 | Explorer | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/YOUR_CONTRACT_ID_HERE) |
