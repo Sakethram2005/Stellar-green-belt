@@ -35,7 +35,7 @@ A client locks XLM in a Soroban smart contract. The freelancer completes work. T
 ## 👥 User Onboarding
 
 **[📋 User Feedback Form](https://docs.google.com/forms/d/e/1FAIpQLSe-vtttJY35lGTlPoHypuvdcHQZ_ZdcVbjhtJgLOHGU_aZRpQ/viewform?usp=publish-editor)**
-**[📊 User Responses Excel Sheet](YOUR_EXCEL_LINK)**
+**[📊 User Responses Excel Sheet](https://docs.google.com/spreadsheets/d/1fvGXat55LEZ9UwgX1-JuQfr-D3Qqsawev0j_b8Zb3lA/edit?resourcekey=&gid=792162712#gid=792162712)**
 
 | # | Name | Wallet | Rating |
 |---|------|--------|--------|
