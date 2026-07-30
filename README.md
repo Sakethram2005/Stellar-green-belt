@@ -5,7 +5,7 @@
 **Level 5 — Blue Belt · Soroban Scout Program**
 
 ## 🌐 Live Demo
-**[stellar-escrow-pay.vercel.app](https://stellar-escrow-pay.vercel.app)**
+**[stellar-escrow-pay.vercel.app](https://stellar-escrow-cabdja9j1-thammandra-saketh-ram.vercel.app/dashboard)**
 
 ## 📋 What It Does
 
