@@ -1,9 +1,9 @@
-// src/components/EscrowCard.jsx
+// src/components/EscrowCard.jsx - v2 with dispute button
 import { useState } from "react";
 import toast from "react-hot-toast";
 import StatusBadge from "./StatusBadge";
-import { shortAddress, stroopsToXlm, formatDate } from "../lib/format";
-import { fundEscrow, approveEscrow, cancelEscrow } from "../lib/soroban";
+import { shortAddress, stroopsToXlm, formatDate, formatDeadline } from "../lib/format";
+import { fundEscrow, approveEscrow, cancelEscrow, raiseDispute } from "../lib/soroban";
 import { EXPLORER_TX } from "../lib/config";
 
 export default function EscrowCard({ escrow, address, onRefresh }) {
@@ -11,6 +11,8 @@ export default function EscrowCard({ escrow, address, onRefresh }) {
 
   const isClient     = address === escrow.client;
   const isFreelancer = address === escrow.freelancer;
+  const deadline     = formatDeadline(escrow.deadline);
+  const isExpired    = deadline === "Expired";
 
   const handle = async (label, fn) => {
     setLoading(true);
@@ -46,6 +48,13 @@ export default function EscrowCard({ escrow, address, onRefresh }) {
 
       <p className="escrow-description">{escrow.description}</p>
 
+      {/* Deadline badge */}
+      {escrow.deadline > 0 && (
+        <div className={`deadline-badge ${isExpired ? "expired" : ""}`}>
+          ⏰ Deadline: {deadline}
+        </div>
+      )}
+
       <div className="escrow-meta">
         <div>
           <span className="meta-label">Amount</span>
@@ -65,32 +74,30 @@ export default function EscrowCard({ escrow, address, onRefresh }) {
         </div>
       </div>
 
+      {/* Action buttons */}
       {isClient && (
         <div className="escrow-actions">
           {escrow.status === "Active" && (
-            <button
-              className="btn btn-primary btn-sm"
-              disabled={loading}
-              onClick={() => handle("Fund Escrow", () => fundEscrow(address, escrow.id))}
-            >
+            <button className="btn btn-primary btn-sm" disabled={loading}
+              onClick={() => handle("Fund Escrow", () => fundEscrow(address, escrow.id))}>
               💰 Fund Escrow
             </button>
           )}
           {escrow.status === "Funded" && (
-            <button
-              className="btn btn-success btn-sm"
-              disabled={loading}
-              onClick={() => handle("Approve & Release", () => approveEscrow(address, escrow.id))}
-            >
+            <button className="btn btn-success btn-sm" disabled={loading}
+              onClick={() => handle("Approve & Release", () => approveEscrow(address, escrow.id))}>
               ✅ Approve & Release
             </button>
           )}
+          {escrow.status === "Funded" && (
+            <button className="btn btn-pink btn-sm" disabled={loading}
+              onClick={() => handle("Raise Dispute", () => raiseDispute(address, escrow.id))}>
+              ⚖️ Dispute
+            </button>
+          )}
           {(escrow.status === "Active" || escrow.status === "Funded") && (
-            <button
-              className="btn btn-danger btn-sm"
-              disabled={loading}
-              onClick={() => handle("Cancel Escrow", () => cancelEscrow(address, escrow.id))}
-            >
+            <button className="btn btn-danger btn-sm" disabled={loading}
+              onClick={() => handle("Cancel Escrow", () => cancelEscrow(address, escrow.id))}>
               ✕ Cancel
             </button>
           )}
@@ -98,19 +105,26 @@ export default function EscrowCard({ escrow, address, onRefresh }) {
       )}
 
       {isFreelancer && escrow.status === "Funded" && (
-        <div className="escrow-note">
-          ⏳ Waiting for client to approve delivery and release payment.
+        <div className="escrow-actions">
+          <button className="btn btn-pink btn-sm" disabled={loading}
+            onClick={() => handle("Raise Dispute", () => raiseDispute(address, escrow.id))}>
+            ⚖️ Raise Dispute
+          </button>
         </div>
       )}
+
+      {/* Status notes */}
       {escrow.status === "Completed" && (
-        <div className="escrow-note success-note">
-          🎉 Payment released to freelancer!
-        </div>
+        <div className="escrow-note success-note">🎉 Payment released to freelancer!</div>
       )}
       {escrow.status === "Cancelled" && (
-        <div className="escrow-note cancelled-note">
-          ✕ This escrow was cancelled.
-        </div>
+        <div className="escrow-note cancelled-note">✕ This escrow was cancelled.</div>
+      )}
+      {escrow.status === "Disputed" && (
+        <div className="escrow-note disputed-note">⚖️ Dispute raised. Under review.</div>
+      )}
+      {isFreelancer && escrow.status === "Funded" && (
+        <div className="escrow-note">⏳ Waiting for client to approve delivery.</div>
       )}
     </div>
   );

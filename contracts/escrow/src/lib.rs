@@ -11,6 +11,7 @@ pub enum EscrowStatus {
     Funded,
     Completed,
     Cancelled,
+    Disputed,
 }
 
 #[contracttype]
@@ -23,6 +24,7 @@ pub struct Escrow {
     pub description: String,
     pub status:      EscrowStatus,
     pub created_at:  u64,
+    pub deadline:    u64,
     pub token:       Address,
 }
 
@@ -38,7 +40,6 @@ pub struct EscrowContract;
 #[contractimpl]
 impl EscrowContract {
 
-    // ── 1. Create escrow (does NOT transfer funds yet) ────────────────────────
     pub fn create_escrow(
         env:         Env,
         client:      Address,
@@ -46,152 +47,135 @@ impl EscrowContract {
         token:       Address,
         amount:      i128,
         description: String,
+        deadline:    u64,
     ) -> u64 {
         client.require_auth();
-
-        assert!(amount > 0,           "Amount must be positive");
+        assert!(amount > 0, "Amount must be positive");
         assert!(client != freelancer, "Client and freelancer must differ");
 
         let id: u64 = env.storage().instance()
-            .get(&DataKey::NextId)
-            .unwrap_or(0u64);
+            .get(&DataKey::NextId).unwrap_or(0u64);
+
+        let deadline_ts = if deadline > 0 {
+            env.ledger().timestamp() + deadline
+        } else { 0u64 };
 
         let escrow = Escrow {
-            id,
-            client:     client.clone(),
-            freelancer: freelancer.clone(),
-            amount,
-            description,
-            status:     EscrowStatus::Active,
-            created_at: env.ledger().timestamp(),
-            token,
+            id, client: client.clone(), freelancer: freelancer.clone(),
+            amount, description, status: EscrowStatus::Active,
+            created_at: env.ledger().timestamp(), deadline: deadline_ts, token,
         };
 
-        env.storage().persistent()
-            .set(&DataKey::Escrow(id), &escrow);
+        env.storage().persistent().set(&DataKey::Escrow(id), &escrow);
+        env.storage().instance().set(&DataKey::NextId, &(id + 1));
 
-        env.storage().instance()
-            .set(&DataKey::NextId, &(id + 1));
-
-        // Emit creation event
         env.events().publish(
             (symbol_short!("escrow"), symbol_short!("created")),
             (id, client, freelancer, amount),
         );
-
         id
     }
 
-    // ── 2. Fund escrow (client transfers XLM to contract) ────────────────────
-    pub fn fund_escrow(
-        env:       Env,
-        client:    Address,
-        escrow_id: u64,
-    ) {
+    pub fn fund_escrow(env: Env, client: Address, escrow_id: u64) {
         client.require_auth();
-
         let mut escrow: Escrow = env.storage().persistent()
-            .get(&DataKey::Escrow(escrow_id))
-            .expect("Escrow not found");
-
-        assert!(escrow.client == client,                "Not the escrow client");
-        assert!(escrow.status == EscrowStatus::Active,  "Escrow not in Active state");
+            .get(&DataKey::Escrow(escrow_id)).expect("Escrow not found");
+        assert!(escrow.client == client, "Not the escrow client");
+        assert!(escrow.status == EscrowStatus::Active, "Escrow not Active");
 
         let token_client = token::Client::new(&env, &escrow.token);
-        token_client.transfer(
-            &client,
-            &env.current_contract_address(),
-            &escrow.amount,
-        );
+        token_client.transfer(&client, &env.current_contract_address(), &escrow.amount);
 
         escrow.status = EscrowStatus::Funded;
-        env.storage().persistent()
-            .set(&DataKey::Escrow(escrow_id), &escrow);
-
+        env.storage().persistent().set(&DataKey::Escrow(escrow_id), &escrow);
         env.events().publish(
             (symbol_short!("escrow"), symbol_short!("funded")),
             (escrow_id, escrow.amount),
         );
     }
 
-    // ── 3. Approve delivery → releases funds to freelancer ───────────────────
-    pub fn approve_escrow(
-        env:       Env,
-        client:    Address,
-        escrow_id: u64,
-    ) {
+    pub fn approve_escrow(env: Env, client: Address, escrow_id: u64) {
         client.require_auth();
-
         let mut escrow: Escrow = env.storage().persistent()
-            .get(&DataKey::Escrow(escrow_id))
-            .expect("Escrow not found");
-
-        assert!(escrow.client == client,                "Not the escrow client");
-        assert!(escrow.status == EscrowStatus::Funded,  "Escrow must be funded before approving");
+            .get(&DataKey::Escrow(escrow_id)).expect("Escrow not found");
+        assert!(escrow.client == client, "Not the escrow client");
+        assert!(escrow.status == EscrowStatus::Funded, "Escrow must be Funded");
 
         let token_client = token::Client::new(&env, &escrow.token);
-        token_client.transfer(
-            &env.current_contract_address(),
-            &escrow.freelancer,
-            &escrow.amount,
-        );
+        token_client.transfer(&env.current_contract_address(), &escrow.freelancer, &escrow.amount);
 
         escrow.status = EscrowStatus::Completed;
-        env.storage().persistent()
-            .set(&DataKey::Escrow(escrow_id), &escrow);
-
+        env.storage().persistent().set(&DataKey::Escrow(escrow_id), &escrow);
         env.events().publish(
             (symbol_short!("escrow"), symbol_short!("approved")),
             (escrow_id, escrow.freelancer.clone(), escrow.amount),
         );
     }
 
-    // ── 4. Cancel escrow → refund to client ──────────────────────────────────
-    pub fn cancel_escrow(
-        env:       Env,
-        client:    Address,
-        escrow_id: u64,
-    ) {
+    pub fn cancel_escrow(env: Env, client: Address, escrow_id: u64) {
         client.require_auth();
-
         let mut escrow: Escrow = env.storage().persistent()
-            .get(&DataKey::Escrow(escrow_id))
-            .expect("Escrow not found");
-
+            .get(&DataKey::Escrow(escrow_id)).expect("Escrow not found");
         assert!(escrow.client == client, "Not the escrow client");
         assert!(
             escrow.status == EscrowStatus::Active || escrow.status == EscrowStatus::Funded,
-            "Cannot cancel completed or already cancelled escrow"
+            "Cannot cancel"
         );
-
-        // Only refund if funded
         if escrow.status == EscrowStatus::Funded {
             let token_client = token::Client::new(&env, &escrow.token);
-            token_client.transfer(
-                &env.current_contract_address(),
-                &client,
-                &escrow.amount,
-            );
+            token_client.transfer(&env.current_contract_address(), &client, &escrow.amount);
         }
-
         escrow.status = EscrowStatus::Cancelled;
-        env.storage().persistent()
-            .set(&DataKey::Escrow(escrow_id), &escrow);
-
+        env.storage().persistent().set(&DataKey::Escrow(escrow_id), &escrow);
         env.events().publish(
             (symbol_short!("escrow"), symbol_short!("cancelled")),
             (escrow_id, escrow.amount),
         );
     }
 
-    // ── Read: get escrow by ID ────────────────────────────────────────────────
+    pub fn raise_dispute(env: Env, caller: Address, escrow_id: u64) {
+        caller.require_auth();
+        let mut escrow: Escrow = env.storage().persistent()
+            .get(&DataKey::Escrow(escrow_id)).expect("Escrow not found");
+        assert!(
+            caller == escrow.client || caller == escrow.freelancer,
+            "Only client or freelancer can raise dispute"
+        );
+        assert!(escrow.status == EscrowStatus::Funded, "Can only dispute Funded escrow");
+        escrow.status = EscrowStatus::Disputed;
+        env.storage().persistent().set(&DataKey::Escrow(escrow_id), &escrow);
+        env.events().publish(
+            (symbol_short!("escrow"), symbol_short!("disputed")),
+            (escrow_id, caller),
+        );
+    }
+
+    pub fn claim_after_deadline(env: Env, freelancer: Address, escrow_id: u64) {
+        freelancer.require_auth();
+        let mut escrow: Escrow = env.storage().persistent()
+            .get(&DataKey::Escrow(escrow_id)).expect("Escrow not found");
+        assert!(escrow.freelancer == freelancer, "Not the freelancer");
+        assert!(escrow.status == EscrowStatus::Funded, "Escrow must be Funded");
+        assert!(escrow.deadline > 0, "No deadline set");
+        assert!(env.ledger().timestamp() >= escrow.deadline, "Deadline not reached yet");
+
+        let token_client = token::Client::new(&env, &escrow.token);
+        token_client.transfer(&env.current_contract_address(), &freelancer, &escrow.amount);
+
+        escrow.status = EscrowStatus::Completed;
+        env.storage().persistent().set(&DataKey::Escrow(escrow_id), &escrow);
+        env.events().publish(
+            (symbol_short!("escrow"), symbol_short!("claimed")),
+            (escrow_id, freelancer, escrow.amount),
+        );
+    }
+
     pub fn get_escrow(env: Env, escrow_id: u64) -> Escrow {
         env.storage().persistent()
             .get(&DataKey::Escrow(escrow_id))
             .expect("Escrow not found")
     }
 
-    // ── Read: get total escrow count ──────────────────────────────────────────
     pub fn get_next_id(env: Env) -> u64 {
         env.storage().instance()
             .get(&DataKey::NextId)
