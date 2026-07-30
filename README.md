@@ -106,9 +106,6 @@ test result: ok. 8 passed; 0 failed
 ## 🎯 Pitch Deck
 [View Pitch Deck](https://docs.google.com/presentation/d/1XU6HJZDb-YlpJS8r2TVx7yUlZFq96lYG/edit?usp=drive_link&ouid=113963825974935893977&rtpof=true&sd=true)
 
-## 🎬 Demo Video
-[Watch Demo](YOUR_DEMO_VIDEO_LINK)
-
 ## Screenshots
 ### Desktop UI
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/450e6533-d04b-47bb-94e8-0c7746d3f92a" />
