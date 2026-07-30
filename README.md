@@ -111,7 +111,8 @@ test result: ok. 8 passed; 0 failed
 
 ## Screenshots
 ### Desktop UI
-![alt text](image.png)
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/450e6533-d04b-47bb-94e8-0c7746d3f92a" />
+
 
 ## 🗂 Project Structure
 ```
