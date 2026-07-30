@@ -23,7 +23,7 @@ A client locks XLM in a Soroban smart contract. The freelancer completes work. T
 
 | Field | Value |
 |---|---|
-| Contract ID | `CC6ZQOQAVFLHKSUZ73JDCHMJLH4RN5F6XXZOQUUP2VQEQ27EFCQGKT2G` |
+| Contract ID | `CDZV25VGJDGZ4DQYTZAVC5QMIZZ5GYL4MMFA7KWPRWHQ4KLJSHIEYEG4` |
 | Network | Stellar Testnet |
 | Explorer | [View Contract](https://stellar.expert/explorer/testnet/contract/CC6ZQOQAVFLHKSUZ73JDCHMJLH4RN5F6XXZOQUUP2VQEQ27EFCQGKT2G) |
 
